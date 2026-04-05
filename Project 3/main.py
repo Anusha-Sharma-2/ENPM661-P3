@@ -52,7 +52,7 @@ if __name__ == '__main__':
         
     # video writer
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter('long_animation.mp4', fourcc, 60.0, (map.WIDTH, map.HEIGHT))
+    out = cv2.VideoWriter('animation.mp4', fourcc, 60.0, (map.WIDTH, map.HEIGHT))
 
     # animating node exploration
     for i, (curr_state, parent_state) in enumerate(explored):

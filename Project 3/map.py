@@ -11,7 +11,6 @@ BLOAT = ROBOT_RADIUS + CLEARANCE
 # scaling factors
 SX = WIDTH / 180
 SY = HEIGHT / 50
-# ------------------------------
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -108,38 +107,8 @@ def is_valid_node(x, y, map_img):
     # cast degrees to integers
     row = int(HEIGHT - 1 - y)
     col = int(x)
-    
-    row = HEIGHT - 1 - y
-    col = x
     b, g, r = map_img[int(row), int(col)]
     # unvalid if pixel is black or grey
     if (b, g, r) == BLACK or (b, g, r) == GREY:
         return False
     return True
-
-# animation work
-def animate_search(map_img, explored_nodes, path, filename="animation.mp4"):
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(filename, fourcc, 60.0, (WIDTH, HEIGHT))
-    
-    # node exploration
-    for i, node in enumerate(explored_nodes):
-        x, y = node
-        map_img[HEIGHT - 1 - y, x] = RED
-        # only show 100th iteration
-        if i % 100 == 0:
-            out.write(map_img)
-
-    # final path
-    if path:
-        for node in path:
-            x, y = node
-            map_img[HEIGHT - 1 - y, x] = BLUE
-            out.write(map_img)
-
-    # wait after path generation
-    for _ in range(60):
-        out.write(map_img)
-
-    out.release()
-    print(f"Animation saved as {filename}")
