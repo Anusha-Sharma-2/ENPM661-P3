@@ -26,7 +26,7 @@ Ensure that `map.py` and the main solver script are located in the same director
 1. Open your terminal or command prompt and navigate to the project directory.
 2. To run the **Backward A*** algorithm, execute the following command:
     
-    `python a_star_anusha_sharma.py`
+    `python main.py`
     
 3. Upon running the script, the terminal will prompt you to enter the Start coordinates, Goal coordinates, and Step Size. 
     * **X inputs:** Must be between 0 and 600.
