@@ -1,9 +1,18 @@
 import numpy as np
 import cv2
 
-WIDTH = 180
-HEIGHT = 50
-CLEARANCE = 2
+# scaling for project 3
+WIDTH = 600
+HEIGHT = 250
+ROBOT_RADIUS = 5
+CLEARANCE = 5
+BLOAT = ROBOT_RADIUS + CLEARANCE
+
+# scaling factors
+SX = WIDTH / 180
+SY = HEIGHT / 50
+# ------------------------------
+
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GREY = (150, 150, 150)
@@ -12,10 +21,11 @@ BLUE = (255, 0, 0)
 
 # intersection of halfplanes passed
 def rect_hp(x, y, xmin, xmax, ymin, ymax, c):
-    h1 = -x + (xmin - c) <= 0
-    h2 =  x - (xmax + c) <= 0
-    h3 = -y + (ymin - c) <= 0
-    h4 =  y - (ymax + c) <= 0
+    # adding sx and sy to scale
+    h1 = -x + (xmin * SX - c) <= 0
+    h2 =  x - (xmax * SX + c) <= 0
+    h3 = -y + (ymin * SY - c) <= 0
+    h4 =  y - (ymax * SY + c) <= 0
     
     return h1 and h2 and h3 and h4
 
@@ -72,14 +82,14 @@ def generate_map():
     
     for y in range(HEIGHT):
         for x in range(WIDTH):
-            # check map boundaries
-            if x < CLEARANCE or x >= WIDTH - CLEARANCE or y < CLEARANCE or y >= HEIGHT - CLEARANCE:
+            # check map boundaries using bloat
+            if x < BLOAT or x >= WIDTH - BLOAT or y < BLOAT or y >= HEIGHT - BLOAT:
                 map_img[HEIGHT - 1 - y, x] = GREY
                 continue
 
-            # check clearance
-            if in_A(x, y, CLEARANCE) or in_S(x, y, CLEARANCE) or in_9(x, y, CLEARANCE) or \
-               in_2(x, y, CLEARANCE) or in_4(x, y, CLEARANCE) or in_7(x, y, CLEARANCE):
+            # check clearance using blaot
+            if in_A(x, y, BLOAT) or in_S(x, y, BLOAT) or in_9(x, y, BLOAT) or \
+               in_2(x, y, BLOAT) or in_4(x, y, BLOAT) or in_7(x, y, BLOAT):
                 map_img[HEIGHT - 1 - y, x] = GREY
                 
             # check obstacle boundaries
@@ -106,7 +116,7 @@ def is_valid_node(x, y, map_img):
 # animation work
 def animate_search(map_img, explored_nodes, path, filename="animation.mp4"):
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(filename, fourcc, 60.0, (WIDTH*5, HEIGHT*5))
+    out = cv2.VideoWriter(filename, fourcc, 60.0, (WIDTH, HEIGHT))
     
     # node exploration
     for i, node in enumerate(explored_nodes):
@@ -114,20 +124,18 @@ def animate_search(map_img, explored_nodes, path, filename="animation.mp4"):
         map_img[HEIGHT - 1 - y, x] = RED
         # only show 100th iteration
         if i % 100 == 0:
-            frame = cv2.resize(map_img, (WIDTH*5, HEIGHT*5), interpolation=cv2.INTER_NEAREST)
-            out.write(frame)
+            out.write(map_img)
 
     # final path
     if path:
         for node in path:
             x, y = node
             map_img[HEIGHT - 1 - y, x] = BLUE
-            frame = cv2.resize(map_img, (WIDTH*5, HEIGHT*5), interpolation=cv2.INTER_NEAREST)
-            out.write(frame)
+            out.write(map_img)
 
     # wait after path generation
     for _ in range(60):
-        out.write(frame)
+        out.write(map_img)
 
     out.release()
     print(f"Animation saved as {filename}")
