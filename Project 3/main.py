@@ -1,5 +1,5 @@
 import map
-from a_star import *
+from a_star_anusha_sharma import *
 import cv2
 
 if __name__ == '__main__':
