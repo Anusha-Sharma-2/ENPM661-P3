@@ -160,3 +160,20 @@ def backward_a_star(user_start, user_goal, L, map_img, is_valid_func):
     # if no path found yet, return failure + message
     print("Search failed, no was path found.")
     return None, None, None
+
+# backtrack algorithm
+def backtrack(visited_info, final_state, start_state):
+    path = []
+    curr_state = final_state
+    
+    while curr_state is not None:
+        path.append(curr_state)
+        # stop if goal reached
+        if curr_state == start_state:
+            break
+            
+        curr_idx = get_discrete_index(*curr_state)
+        curr_state = visited_info[curr_idx]['parent']
+        
+    path.reverse()
+    return path

@@ -105,9 +105,13 @@ def is_valid_node(x, y, map_img):
     if x < 0 or x >= WIDTH or y < 0 or y >= HEIGHT:
         return False
     
+    # cast degrees to integers
+    row = int(HEIGHT - 1 - y)
+    col = int(x)
+    
     row = HEIGHT - 1 - y
     col = x
-    b, g, r = map_img[row, col]
+    b, g, r = map_img[int(row), int(col)]
     # unvalid if pixel is black or grey
     if (b, g, r) == BLACK or (b, g, r) == GREY:
         return False
