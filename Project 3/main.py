@@ -1,5 +1,6 @@
 import map
 from a_star import *
+import cv2
 
 if __name__ == '__main__':
     # generate map
@@ -47,3 +48,48 @@ if __name__ == '__main__':
         optimal_path = backtrack(visited, final_node, user_goal)
         print(f"Path generated with {len(optimal_path)} steps!")
         
+    print("Starting animation generation:")
+        
+    # video writer
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter('long_animation.mp4', fourcc, 60.0, (map.WIDTH, map.HEIGHT))
+
+    # animating node exploration
+    for i, (curr_state, parent_state) in enumerate(explored):
+        if curr_state == parent_state:
+            continue
+                
+        cx, cy, _ = curr_state
+        px, py, _ = parent_state
+            
+        # continuous to discrete (for drawing pixels sake)
+        pt1 = (int(px), map.HEIGHT - 1 - int(py))
+        pt2 = (int(cx), map.HEIGHT - 1 - int(cy))
+            
+        # robot's movement is red line
+        cv2.line(workspace, pt1, pt2, map.RED, 1)
+            
+        # for every 50th frame, render frame
+        if i % 50 == 0:
+            out.write(workspace)
+
+    # animate path
+    if optimal_path:
+        # loop through the path array, connecting i-1 to i
+        for i in range(1, len(optimal_path)):
+            px, py, _ = optimal_path[i-1]
+            cx, cy, _ = optimal_path[i]
+            pt1 = (int(px), map.HEIGHT - 1 - int(py))
+            pt2 = (int(cx), map.HEIGHT - 1 - int(cy))
+                
+            # final path is blue line
+            cv2.line(workspace, pt1, pt2, map.BLUE, 2)
+            out.write(workspace)
+
+    # wait at end to show results
+    for _ in range(200):
+        out.write(workspace)
+
+    out.release()
+    
+    print("Animation saved as animation.mp4!")
