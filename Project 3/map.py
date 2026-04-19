@@ -89,6 +89,7 @@ def generate_map(robot_radius, clearance):
                in_2(x, y, bloat) or in_4(x, y, bloat) or in_7(x, y, bloat):
                 map_img[HEIGHT - 1 - y, x] = GREY
                 
+            # check obstacle boundaries
             if in_A(x, y, 0) or in_S(x, y, 0) or in_9(x, y, 0) or \
                in_2(x, y, 0) or in_4(x, y, 0) or in_7(x, y, 0):
                 map_img[HEIGHT - 1 - y, x] = BLACK
