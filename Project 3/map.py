@@ -1,16 +1,9 @@
 import numpy as np
 import cv2
+import math
 
-# scaling for project 3
-WIDTH = 600
-HEIGHT = 250
-ROBOT_RADIUS = 5
-CLEARANCE = 5
-BLOAT = ROBOT_RADIUS + CLEARANCE
-
-# scaling factors
-SX = WIDTH / 180
-SY = HEIGHT / 50
+WIDTH = 400
+HEIGHT = 200
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -18,95 +11,51 @@ GREY = (150, 150, 150)
 RED = (0, 0, 255)
 BLUE = (255, 0, 0)
 
-# intersection of halfplanes passed
-def rect_hp(x, y, xmin, xmax, ymin, ymax, c):
-    # adding sx and sy to scale
-    h1 = -x + (xmin * SX - c) <= 0
-    h2 =  x - (xmax * SX + c) <= 0
-    h3 = -y + (ymin * SY - c) <= 0
-    h4 =  y - (ymax * SY + c) <= 0
-    
-    return h1 and h2 and h3 and h4
-
-# A
-def in_A(x, y, c=0):
-    left_leg  = rect_hp(x, y, 15, 17, 10, 40, c)
-    right_leg = rect_hp(x, y, 28, 30, 10, 40, c)
-    top_bar   = rect_hp(x, y, 15, 30, 38, 40, c)
-    mid_bar   = rect_hp(x, y, 17, 28, 24, 26, c)
-    return left_leg or right_leg or top_bar or mid_bar
-
-# S
-def in_S(x, y, c=0):
-    top_bar   = rect_hp(x, y, 40, 55, 38, 40, c)
-    mid_bar   = rect_hp(x, y, 40, 55, 24, 26, c)
-    bot_bar   = rect_hp(x, y, 40, 55, 10, 12, c)
-    top_left  = rect_hp(x, y, 40, 42, 26, 38, c)
-    bot_right = rect_hp(x, y, 53, 55, 12, 24, c)
-    return top_bar or mid_bar or bot_bar or top_left or bot_right
-
-# 9
-def in_9(x, y, c=0):
-    right_leg = rect_hp(x, y, 78, 80, 10, 40, c)
-    top_bar   = rect_hp(x, y, 65, 80, 38, 40, c)
-    mid_bar   = rect_hp(x, y, 65, 80, 24, 26, c)
-    left_top  = rect_hp(x, y, 65, 67, 26, 38, c)
-    return right_leg or top_bar or mid_bar or left_top
-
-# 2
-def in_2(x, y, c=0):
-    top_bar    = rect_hp(x, y, 90, 105, 38, 40, c)
-    upper_right= rect_hp(x, y, 103, 105, 26, 38, c)
-    mid_bar    = rect_hp(x, y, 90, 105, 24, 26, c)
-    lower_left = rect_hp(x, y, 90, 92, 12, 24, c)
-    bot_bar    = rect_hp(x, y, 90, 105, 10, 12, c)
-    return top_bar or upper_right or mid_bar or lower_left or bot_bar
-
-# 4
-def in_4(x, y, c=0):
-    left_leg  = rect_hp(x, y, 115, 117, 24, 40, c)
-    mid_bar   = rect_hp(x, y, 115, 130, 24, 26, c)
-    right_leg = rect_hp(x, y, 128, 130, 10, 40, c)
-    return left_leg or mid_bar or right_leg
-
-# 7
-def in_7(x, y, c=0):
-    top_bar   = rect_hp(x, y, 140, 155, 38, 40, c)
-    right_leg = rect_hp(x, y, 153, 155, 10, 38, c)
-    return top_bar or right_leg
-
-
 def generate_map(robot_radius, clearance):
     map_img = np.full((HEIGHT, WIDTH, 3), 255, dtype=np.uint8)
-    bloat = robot_radius + clearance
+    bloat = int(robot_radius + clearance)
+    obs_mask = np.zeros((HEIGHT, WIDTH), dtype=np.uint8)
     
-    for y in range(HEIGHT):
-        for x in range(WIDTH):
-            if x < bloat or x >= WIDTH - bloat or y < bloat or y >= HEIGHT - bloat:
-                map_img[HEIGHT - 1 - y, x] = GREY
-                continue
-            if in_A(x, y, bloat) or in_S(x, y, bloat) or in_9(x, y, bloat) or \
-               in_2(x, y, bloat) or in_4(x, y, bloat) or in_7(x, y, bloat):
-                map_img[HEIGHT - 1 - y, x] = GREY
-                
-            # check obstacle boundaries
-            if in_A(x, y, 0) or in_S(x, y, 0) or in_9(x, y, 0) or \
-               in_2(x, y, 0) or in_4(x, y, 0) or in_7(x, y, 0):
-                map_img[HEIGHT - 1 - y, x] = BLACK
+    def pt(x, y):
+        return (int(x), int(HEIGHT - 1 - y))
 
+    # squares
+    # Centers: (45, 42), (133.5, 155), (220, 174)
+    for cx, cy in [(45, 42), (133.5, 155), (220, 174)]:
+        cv2.rectangle(obs_mask, pt(cx-7.5, cy+7.5), pt(cx+7.5, cy-7.5), 255, -1)
+
+    # right slide vertical wall - after 3rd square
+    cv2.rectangle(obs_mask, pt(295, 200), pt(300, 55), 255, -1)
+    
+    # first llanting line - at box 1 center x
+    # x=45 y=200 140 -30
+    x1_start, y1_start = 45, 200
+    x1_end = x1_start + 140 * math.cos(math.radians(-60))
+    y1_end = y1_start + 140 * math.sin(math.radians(-60))
+    cv2.line(obs_mask, pt(x1_start, y1_start), pt(x1_end, y1_end), 255, 5)
+    
+    # second slanting line - at box 2 center x
+    # x=133.5 y=0 135 120
+    x2_start, y2_start = 133.5, 0
+    x2_end = x2_start + 135 * math.cos(math.radians(60))
+    y2_end = y2_start + 135 * math.sin(math.radians(60))
+    cv2.line(obs_mask, pt(x2_start, y2_start), pt(x2_end, y2_end), 255, 5)
+
+    # bloat
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (bloat*2+1, bloat*2+1))
+    bloated_mask = cv2.dilate(obs_mask, kernel)
+
+    map_img[bloated_mask == 255] = GREY
+    map_img[obs_mask == 255] = BLACK
+    cv2.rectangle(map_img, (0, 0), (WIDTH-1, HEIGHT-1), GREY, bloat*2)
+    cv2.circle(map_img, pt(0, 100), bloat + 2, WHITE, -1)
+    
     return map_img
 
-# helper for determining if this is a valid node to move on
 def is_valid_node(x, y, map_img):
-    # bounds check
-    if x < 0 or x >= WIDTH or y < 0 or y >= HEIGHT:
-        return False
-    
-    # cast degrees to integers
+    if x < 0 or x >= WIDTH or y < 0 or y >= HEIGHT: return False
     row = int(HEIGHT - 1 - y)
     col = int(x)
-    b, g, r = map_img[int(row), int(col)]
-    # unvalid if pixel is black or grey
-    if (b, g, r) == BLACK or (b, g, r) == GREY:
-        return False
-    return True
+    if row >= HEIGHT or col >= WIDTH or row < 0 or col < 0: return False
+    b, g, r = map_img[row, col]
+    return not ((b, g, r) == BLACK or (b, g, r) == GREY)
