@@ -76,22 +76,19 @@ def in_7(x, y, c=0):
     return top_bar or right_leg
 
 
-def generate_map():
+def generate_map(robot_radius, clearance):
     map_img = np.full((HEIGHT, WIDTH, 3), 255, dtype=np.uint8)
+    bloat = robot_radius + clearance
     
     for y in range(HEIGHT):
         for x in range(WIDTH):
-            # check map boundaries using bloat
-            if x < BLOAT or x >= WIDTH - BLOAT or y < BLOAT or y >= HEIGHT - BLOAT:
+            if x < bloat or x >= WIDTH - bloat or y < bloat or y >= HEIGHT - bloat:
                 map_img[HEIGHT - 1 - y, x] = GREY
                 continue
-
-            # check clearance using blaot
-            if in_A(x, y, BLOAT) or in_S(x, y, BLOAT) or in_9(x, y, BLOAT) or \
-               in_2(x, y, BLOAT) or in_4(x, y, BLOAT) or in_7(x, y, BLOAT):
+            if in_A(x, y, bloat) or in_S(x, y, bloat) or in_9(x, y, bloat) or \
+               in_2(x, y, bloat) or in_4(x, y, bloat) or in_7(x, y, bloat):
                 map_img[HEIGHT - 1 - y, x] = GREY
                 
-            # check obstacle boundaries
             if in_A(x, y, 0) or in_S(x, y, 0) or in_9(x, y, 0) or \
                in_2(x, y, 0) or in_4(x, y, 0) or in_7(x, y, 0):
                 map_img[HEIGHT - 1 - y, x] = BLACK
