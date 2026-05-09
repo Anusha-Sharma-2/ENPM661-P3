@@ -10,7 +10,8 @@ ACTION_TIME = 1
 R = 3.8
 L = 35.4
 
-visited_matrix = np.zeros((81, 41, 13), dtype=bool)
+# visited_matrix = np.zeros((81, 41, 13), dtype=bool)
+visited_matrix = np.zeros((101, 41, 13), dtype=bool)
 
 # differential integration move
 def move(x, y, theta_rad, ul_rpm, ur_rpm, map_img, is_valid_func):
@@ -108,8 +109,10 @@ def forward_a_star(user_start, user_goal, rpm1, rpm2, map_img, is_valid_func):
             n_idx = get_discrete_index(nx, ny, nt)
             
             #
-            if n_idx[0] < 0 or n_idx[0] >= 81 or n_idx[1] < 0 or n_idx[1] >= 41 or n_idx[2] < 0 or n_idx[2] >= 13:
+            # if n_idx[0] < 0 or n_idx[0] >= 81 or n_idx[1] < 0 or n_idx[1] >= 41 or n_idx[2] < 0 or n_idx[2] >= 13:
+            if n_idx[0] < 0 or n_idx[0] >= 101 or n_idx[1] < 0 or n_idx[1] >= 41 or n_idx[2] < 0 or n_idx[2] >= 13:
                 continue
+
                 
             if not visited_matrix[n_idx[0]][n_idx[1]][n_idx[2]]:
                 turn_penalty = abs(ur - ul) * 0.03

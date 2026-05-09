@@ -3,7 +3,7 @@ import cv2
 import map
 from a_star_anusha_sharma import *
 
-ROBOT_RADIUS = 11.5  # cm
+ROBOT_RADIUS = 16.75  # cm
 DEBUG_WAYPOINT_LIMIT = 100
 
 if __name__ == '__main__':
@@ -28,12 +28,9 @@ if __name__ == '__main__':
 
             test_points = [
                 (0, 100),
-                (25, 100),
-                (50, 100),
-                (60, 100),
-                (75, 100),
-                (100, 100),
-                (350, 100)
+                (350, 100),
+                (390, 35),
+                (500, 35)
             ]
 
             print("\nValidity check:")
@@ -51,9 +48,9 @@ if __name__ == '__main__':
                 print("ERROR: Start node is in an obstacle or out of bounds. Try again.")
                 continue
 
-            if not map.is_valid_node(xg, yg, workspace):
-                print("ERROR: Goal node is in an obstacle or out of bounds. Try again.")
-                continue
+            # if not map.is_valid_node(xg, yg, workspace):
+            #     print("ERROR: Goal node is in an obstacle or out of bounds. Try again.")
+            #     continue
 
             break
 
@@ -95,7 +92,7 @@ if __name__ == '__main__':
         # Gazebo arena seems to be 2x larger than the planner map.
         # Planner map: 400 x 200 cm
         # Gazebo arena: about 8 x 4 m
-        GAZEBO_SCALE = 2.0
+        GAZEBO_SCALE = 1.65
 
         # From /odom, the TurtleBot starts around x=0.50, y=0.0.
         # This keeps the first planned point lined up with the real robot spawn.

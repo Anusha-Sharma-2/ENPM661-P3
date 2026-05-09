@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import math
 
-WIDTH = 400
+WIDTH = 500
 HEIGHT = 200
 
 WHITE = (255, 255, 255)
@@ -25,7 +25,8 @@ def generate_map(robot_radius, clearance):
         cv2.rectangle(obs_mask, pt(cx-7.5, cy+7.5), pt(cx+7.5, cy-7.5), 255, -1)
 
     # right slide vertical wall - after 3rd square
-    cv2.rectangle(obs_mask, pt(290, 200), pt(305, 45), 255, -1)    
+    #cv2.rectangle(obs_mask, pt(290, 200), pt(305, 45), 255, -1)    
+    cv2.rectangle(obs_mask, pt(280, 200), pt(295, 45), 255, -1)
     # first llanting line - at box 1 center x
     # x=45 y=200 140 -30
     x1_start, y1_start = 45, 200
@@ -35,9 +36,9 @@ def generate_map(robot_radius, clearance):
     
     # second slanting line - at box 2 center x
     # x=133.5 y=0 135 120
-    x2_start, y2_start = 133.5, 0
-    x2_end = x2_start + 135 * math.cos(math.radians(60))
-    y2_end = y2_start + 135 * math.sin(math.radians(60))
+    x2_start, y2_start = 130.5, 0
+    x2_end = x2_start + 136 * math.cos(math.radians(60))
+    y2_end = y2_start + 136 * math.sin(math.radians(60))
     cv2.line(obs_mask, pt(x2_start, y2_start), pt(x2_end, y2_end), 255, 5)
 
     # bloat
@@ -46,15 +47,24 @@ def generate_map(robot_radius, clearance):
 
     map_img[bloated_mask == 255] = GREY
     map_img[obs_mask == 255] = BLACK
-    cv2.rectangle(map_img, (0, 0), (WIDTH-1, HEIGHT-1), GREY, bloat*2)
+    #cv2.rectangle(map_img, (0, 0), (WIDTH-1, HEIGHT-1), GREY, bloat*2)
+
+    cv2.line(map_img, (0, 0), (WIDTH, 0), GREY, bloat * 2)
+    cv2.line(map_img, (0, HEIGHT - 1), (WIDTH, HEIGHT - 1), GREY, bloat * 2)
     cv2.circle(map_img, pt(0, 100), bloat + 2, WHITE, -1)
     
     return map_img
 
 def is_valid_node(x, y, map_img):
-    if x < 0 or x >= WIDTH or y < 0 or y >= HEIGHT: return False
+    if x < 0 or x > WIDTH or y < 0 or y >= HEIGHT:
+        return False
+
     row = int(HEIGHT - 1 - y)
-    col = int(x)
-    if row >= HEIGHT or col >= WIDTH or row < 0 or col < 0: return False
+    col = min(int(x), WIDTH - 1)
+
+    # if row >= 450 or col >= WIDTH or row < 0 or col < 0:
+    #     return False
+
     b, g, r = map_img[row, col]
+
     return not ((b, g, r) == BLACK or (b, g, r) == GREY)

@@ -4,6 +4,24 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import math
 import os
+# from rclpy.qos import QoSProfile
+# from rclpy.qos import ReliabilityPolicy
+# from rclpy.qos import HistoryPolicy
+
+# =========================
+# ROBOT CONFIG
+# =========================
+
+REAL_ROBOT = True
+
+ROBOT_NAMESPACE = "tb4_4"
+
+if REAL_ROBOT:
+    CMD_VEL_TOPIC = f"/{ROBOT_NAMESPACE}/cmd_vel_unstamped"
+    ODOM_TOPIC = f"/{ROBOT_NAMESPACE}/odom"
+else:
+    CMD_VEL_TOPIC = "/cmd_vel"
+    ODOM_TOPIC = "/odom"
 
 def yaw_from_quaternion(q):
     siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
@@ -25,10 +43,10 @@ class TurtleBotController(Node):
     def __init__(self):
         super().__init__('p_waypoint_controller')
 
-        self.publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.publisher_ = self.create_publisher(Twist, CMD_VEL_TOPIC, 10)
         self.odom_sub = self.create_subscription(
             Odometry,
-            '/odom',
+            ODOM_TOPIC,
             self.odom_callback,
             10
         )
@@ -41,7 +59,6 @@ class TurtleBotController(Node):
         self.current_waypoint = 0
         self.valid = True
         self.start_time = None
-        self.timer = self.create_timer(0.05, self.control_loop)
 
         # Change this only if folder moves
         waypoint_file = '/root/proj3_ws/src/ENPM661-P3/Project 3/waypoints.txt'
@@ -63,6 +80,10 @@ class TurtleBotController(Node):
                 x, y = map(float, line.split(','))
                 self.waypoints.append((x, y))
 
+        # self.waypoints = [
+        #     (2.0, 0.0)
+        # ]
+
         if len(self.waypoints) == 0:
             self.get_logger().error("waypoints.txt exists, but no waypoints were loaded.")
             return
@@ -79,14 +100,14 @@ class TurtleBotController(Node):
 
         self.get_logger().info(f"Writing odom/waypoint debug to: {self.debug_log_path}")
 
-        # Tune these
-        self.kp_linear = 1.6
-        self.kp_angular = 0.9
+        # Tune
+        self.kp_linear = 1.2
+        self.kp_angular = 1.4
 
         self.max_linear_speed = 0.5
         self.max_angular_speed = 0.9
 
-        self.waypoint_threshold = 0.8  # meters
+        self.waypoint_threshold = 0.5  # meters
         # self.kp_linear = 1.0
         # self.kp_angular = 0.45
 
@@ -94,6 +115,15 @@ class TurtleBotController(Node):
         # self.max_angular_speed = 0.8
 
         # self.waypoint_threshold = 0.15
+
+        # real robot try
+        # self.kp_linear = 1.2
+        # self.kp_angular = 0.7
+
+        # self.max_linear_speed = 0.3
+        # self.max_angular_speed = 0.8
+
+        # self.waypoint_threshold = 0.05 # meters
 
         self.valid = True
 
@@ -119,7 +149,7 @@ class TurtleBotController(Node):
             return
 
         #target_x, target_y = self.waypoints[self.current_waypoint]
-        lookahead = 3
+        lookahead = 0
 
         target_index = min(
             self.current_waypoint + lookahead,
@@ -136,6 +166,11 @@ class TurtleBotController(Node):
         desired_theta = math.atan2(dy, dx)
         theta_error = wrap_angle(desired_theta - self.theta)
 
+        # self.get_logger().info(
+        #     f"dist_error={distance_error:.3f}, "
+        #     f"target=({target_x:.2f},{target_y:.2f}), "
+        #     f"pose=({self.x:.2f},{self.y:.2f})"
+        # )
         if distance_error < self.waypoint_threshold:
             self.get_logger().info(
                 f"Reached waypoint {self.current_waypoint + 1}/{len(self.waypoints)} "
@@ -168,6 +203,9 @@ class TurtleBotController(Node):
         msg.linear.x = linear_speed
         msg.angular.z = angular_speed
 
+        self.get_logger().info(
+            f"PUBLISHING: linear={linear_speed:.3f}, angular={angular_speed:.3f}"
+        )
         self.publisher_.publish(msg)
         end_time = self.get_clock().now().nanoseconds / 1e9
         self.get_logger().info(f"Total run time: {end_time - self.start_time:.2f} seconds")
