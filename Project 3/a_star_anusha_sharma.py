@@ -112,7 +112,9 @@ def forward_a_star(user_start, user_goal, rpm1, rpm2, map_img, is_valid_func):
                 continue
                 
             if not visited_matrix[n_idx[0]][n_idx[1]][n_idx[2]]:
-                c2c_neighbor = curr_c2c + step_cost
+                turn_penalty = abs(ur - ul) * 0.03
+                c2c_neighbor = curr_c2c + step_cost + turn_penalty
+
                 cost_to_go = calculate_heuristic(nx, ny, user_goal[0], user_goal[1])
                 cost_neighbor = c2c_neighbor + (1.0 * cost_to_go)
                 

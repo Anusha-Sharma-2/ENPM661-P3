@@ -115,7 +115,6 @@ if __name__ == '__main__':
                     continue
 
                 # Save dense waypoints along each A* curve.
-                # Change 4 to 2 if you want denser waypoints again.
                 for i, point in enumerate(curve):
                     if i % 5 != 0 and i != len(curve) - 1:
                         continue
@@ -125,7 +124,7 @@ if __name__ == '__main__':
                     # Save planner-space waypoint for debug drawing
                     planner_waypoints.append((x_cm, y_cm))
 
-                    # Convert planner-relative cm motion to Gazebo-relative meters.
+                    # Convert planner-relative cm  to gazebo scale
                     x_m = GAZEBO_START_X + ((x_cm - PLANNER_START_X) / 100.0) * GAZEBO_SCALE
                     y_m = GAZEBO_START_Y + ((y_cm - PLANNER_START_Y) / 100.0) * GAZEBO_SCALE
 
@@ -156,7 +155,7 @@ if __name__ == '__main__':
 
         gazebo_waypoints = smoothed_waypoints
 
-        # overwrite waypoints file with smoothed trajectory
+        # add smoothed waypoints to file
         with open(waypoints_path, "w") as f:
             for x_m, y_m in gazebo_waypoints:
                 f.write(f"{x_m},{y_m}\n")
@@ -184,8 +183,7 @@ if __name__ == '__main__':
             -1
         )
 
-        # draw the first DEBUG_WAYPOINT_LIMIT planner waypoints
-        limited_waypoints = planner_waypoints[:DEBUG_WAYPOINT_LIMIT]
+        limited_waypoints = planner_waypoints
 
         for i, (wx, wy) in enumerate(limited_waypoints):
             px = int(wx)
