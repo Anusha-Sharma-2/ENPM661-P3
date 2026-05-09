@@ -80,10 +80,10 @@ class TurtleBotController(Node):
         self.get_logger().info(f"Writing odom/waypoint debug to: {self.debug_log_path}")
 
         # Tune these
-        self.kp_linear = 1.2
+        self.kp_linear = 1.6
         self.kp_angular = 0.9
 
-        self.max_linear_speed = 0.4
+        self.max_linear_speed = 0.5
         self.max_angular_speed = 0.9
 
         self.waypoint_threshold = 0.8  # meters
