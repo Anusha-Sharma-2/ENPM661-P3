@@ -3,7 +3,7 @@ import cv2
 import map
 from a_star_anusha_sharma import *
 
-ROBOT_RADIUS = 10.5  # cm
+ROBOT_RADIUS = 11.5  # cm
 DEBUG_WAYPOINT_LIMIT = 100
 
 if __name__ == '__main__':
@@ -117,7 +117,7 @@ if __name__ == '__main__':
                 # Save dense waypoints along each A* curve.
                 # Change 4 to 2 if you want denser waypoints again.
                 for i, point in enumerate(curve):
-                    if i % 12 != 0 and i != len(curve) - 1:
+                    if i % 5 != 0 and i != len(curve) - 1:
                         continue
 
                     x_cm, y_cm, theta_rad = point
@@ -130,7 +130,36 @@ if __name__ == '__main__':
                     y_m = GAZEBO_START_Y + ((y_cm - PLANNER_START_Y) / 100.0) * GAZEBO_SCALE
 
                     gazebo_waypoints.append((x_m, y_m))
-                    f.write(f"{x_m},{y_m}\n")
+                    
+
+        
+        # Smooth the waypoint trajectory using moving average
+        smoothed_waypoints = []
+
+        window = 1
+
+        for i in range(len(gazebo_waypoints)):
+            x_vals = []
+            y_vals = []
+
+            for j in range(
+                max(0, i - window),
+                min(len(gazebo_waypoints), i + window + 1)
+            ):
+                x_vals.append(gazebo_waypoints[j][0])
+                y_vals.append(gazebo_waypoints[j][1])
+
+            avg_x = sum(x_vals) / len(x_vals)
+            avg_y = sum(y_vals) / len(y_vals)
+
+            smoothed_waypoints.append((avg_x, avg_y))
+
+        gazebo_waypoints = smoothed_waypoints
+
+        # overwrite waypoints file with smoothed trajectory
+        with open(waypoints_path, "w") as f:
+            for x_m, y_m in gazebo_waypoints:
+                f.write(f"{x_m},{y_m}\n")
 
         print(f"Exported waypoints to {waypoints_path}")
         print(f"Generated {len(gazebo_waypoints)} Gazebo waypoints.")

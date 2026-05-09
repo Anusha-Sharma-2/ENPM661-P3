@@ -87,6 +87,13 @@ class TurtleBotController(Node):
         self.max_angular_speed = 0.9
 
         self.waypoint_threshold = 0.8  # meters
+        # self.kp_linear = 1.0
+        # self.kp_angular = 0.45
+
+        # self.max_linear_speed = 0.45
+        # self.max_angular_speed = 0.8
+
+        # self.waypoint_threshold = 0.15
 
         self.valid = True
 
@@ -111,7 +118,15 @@ class TurtleBotController(Node):
             self.timer.cancel()
             return
 
-        target_x, target_y = self.waypoints[self.current_waypoint]
+        #target_x, target_y = self.waypoints[self.current_waypoint]
+        lookahead = 3
+
+        target_index = min(
+            self.current_waypoint + lookahead,
+            len(self.waypoints) - 1
+        )
+
+        target_x, target_y = self.waypoints[target_index]
 
         dx = target_x - self.x
         dy = target_y - self.y
