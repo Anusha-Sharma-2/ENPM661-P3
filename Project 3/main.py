@@ -3,9 +3,11 @@ import cv2
 import map
 from a_star_anusha_sharma import *
 
-ROBOT_RADIUS = 10.5
+ROBOT_RADIUS = 10.5  # cm
+DEBUG_WAYPOINT_LIMIT = 100
 
 if __name__ == '__main__':
+    # get user inputs
     while True:
         try:
             print("\nEnter start coordinates:")
@@ -37,15 +39,14 @@ if __name__ == '__main__':
             print("\nValidity check:")
             for tx, ty in test_points:
                 print(tx, ty, map.is_valid_node(tx, ty, workspace))
-            
-            debug = workspace.copy()
 
+            debug = workspace.copy()
             for tx, ty in test_points:
                 color = (0, 255, 0) if map.is_valid_node(tx, ty, workspace) else (0, 0, 255)
                 cv2.circle(debug, (int(tx), map.HEIGHT - 1 - int(ty)), 4, color, -1)
-
             cv2.imwrite("debug_points.png", debug)
 
+            # validate input
             if not map.is_valid_node(xs, ys, workspace):
                 print("ERROR: Start node is in an obstacle or out of bounds. Try again.")
                 continue
@@ -79,23 +80,135 @@ if __name__ == '__main__':
         print(f"Path generated with {len(optimal_path)} steps.")
 
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        actions_path = os.path.join(base_dir, "actions.txt")
 
+        # Save actions like before
+        actions_path = os.path.join(base_dir, "actions.txt")
         with open(actions_path, "w") as f:
             for ul, ur in actions:
                 f.write(f"{ul},{ur}\n")
 
         print(f"Exported actions to {actions_path}")
 
+        # Save waypoints for odom-based P controller
+        waypoints_path = os.path.join(base_dir, "waypoints.txt")
+
+        # Gazebo arena seems to be 2x larger than the planner map.
+        # Planner map: 400 x 200 cm
+        # Gazebo arena: about 8 x 4 m
+        GAZEBO_SCALE = 2.0
+
+        # From /odom, the TurtleBot starts around x=0.50, y=0.0.
+        # This keeps the first planned point lined up with the real robot spawn.
+        GAZEBO_START_X = 0.50
+        GAZEBO_START_Y = 0.0
+
+        PLANNER_START_X = xs
+        PLANNER_START_Y = ys
+
+        # keep planner-space waypoints too so we can draw the exact debug image
+        planner_waypoints = []
+        gazebo_waypoints = []
+
+        with open(waypoints_path, "w") as f:
+            for curve in optimal_path:
+                if len(curve) == 0:
+                    continue
+
+                # Save dense waypoints along each A* curve.
+                # Change 4 to 2 if you want denser waypoints again.
+                for i, point in enumerate(curve):
+                    if i % 12 != 0 and i != len(curve) - 1:
+                        continue
+
+                    x_cm, y_cm, theta_rad = point
+
+                    # Save planner-space waypoint for debug drawing
+                    planner_waypoints.append((x_cm, y_cm))
+
+                    # Convert planner-relative cm motion to Gazebo-relative meters.
+                    x_m = GAZEBO_START_X + ((x_cm - PLANNER_START_X) / 100.0) * GAZEBO_SCALE
+                    y_m = GAZEBO_START_Y + ((y_cm - PLANNER_START_Y) / 100.0) * GAZEBO_SCALE
+
+                    gazebo_waypoints.append((x_m, y_m))
+                    f.write(f"{x_m},{y_m}\n")
+
+        print(f"Exported waypoints to {waypoints_path}")
+        print(f"Generated {len(gazebo_waypoints)} Gazebo waypoints.")
+
+        # Save a debug image showing only the first few waypoints/path segments.
+        debug_first = map.generate_map(ROBOT_RADIUS, clearance)
+
+        # draw start and goal
+        cv2.circle(
+            debug_first,
+            (int(xs), map.HEIGHT - 1 - int(ys)),
+            5,
+            (0, 255, 0),
+            -1
+        )
+
+        cv2.circle(
+            debug_first,
+            (int(xg), map.HEIGHT - 1 - int(yg)),
+            5,
+            (255, 0, 255),
+            -1
+        )
+
+        # draw the first DEBUG_WAYPOINT_LIMIT planner waypoints
+        limited_waypoints = planner_waypoints[:DEBUG_WAYPOINT_LIMIT]
+
+        for i, (wx, wy) in enumerate(limited_waypoints):
+            px = int(wx)
+            py = map.HEIGHT - 1 - int(wy)
+
+            # first waypoint is yellow-ish, rest are blue
+            color = (0, 255, 255) if i == 0 else map.BLUE
+            cv2.circle(debug_first, (px, py), 3, color, -1)
+
+            if i > 0:
+                prev_x, prev_y = limited_waypoints[i - 1]
+                pt1 = (int(prev_x), map.HEIGHT - 1 - int(prev_y))
+                pt2 = (int(wx), map.HEIGHT - 1 - int(wy))
+                cv2.line(debug_first, pt1, pt2, map.BLUE, 2)
+
+        # mark the final debug waypoint in orange/red
+        if len(limited_waypoints) > 0:
+            last_x, last_y = limited_waypoints[-1]
+            cv2.circle(
+                debug_first,
+                (int(last_x), map.HEIGHT - 1 - int(last_y)),
+                7,
+                (0, 128, 255),
+                -1
+            )
+
+        debug_first_path = os.path.join(base_dir, f"debug_first_{DEBUG_WAYPOINT_LIMIT}_waypoints.png")
+        cv2.imwrite(debug_first_path, debug_first)
+        print(f"Saved first {DEBUG_WAYPOINT_LIMIT} waypoint debug image to {debug_first_path}")
+
+        # Also save the first few waypoint numbers to a text file for checking
+        debug_txt_path = os.path.join(base_dir, f"debug_first_{DEBUG_WAYPOINT_LIMIT}_waypoints.txt")
+        with open(debug_txt_path, "w") as f:
+            f.write("idx,planner_x_cm,planner_y_cm,gazebo_x_m,gazebo_y_m\n")
+            for i in range(min(DEBUG_WAYPOINT_LIMIT, len(planner_waypoints))):
+                px, py = planner_waypoints[i]
+                gx, gy = gazebo_waypoints[i]
+                f.write(f"{i},{px},{py},{gx},{gy}\n")
+
+        print(f"Saved waypoint debug text to {debug_txt_path}")
+
     else:
         print("Exiting without animation because no path was found.")
         exit()
 
-    print("Starting animation generation.")
+    print("Starting animation generation:")
 
+    # video writer
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter("animation.mp4", fourcc, 60.0, (map.WIDTH, map.HEIGHT))
 
+    # animate explored nodes
     for i, (curr_state, path_curve) in enumerate(explored):
         if len(path_curve) < 2:
             continue
@@ -112,20 +225,23 @@ if __name__ == '__main__':
         if i % 50 == 0:
             out.write(workspace)
 
-    for curve in optimal_path:
-        for i in range(1, len(curve)):
-            px, py, _ = curve[i - 1]
-            cx, cy, _ = curve[i]
+    # animate optimal path
+    if optimal_path:
+        for curve in optimal_path:
+            for i in range(1, len(curve)):
+                px, py, _ = curve[i - 1]
+                cx, cy, _ = curve[i]
 
-            pt1 = (int(px), map.HEIGHT - 1 - int(py))
-            pt2 = (int(cx), map.HEIGHT - 1 - int(cy))
+                pt1 = (int(px), map.HEIGHT - 1 - int(py))
+                pt2 = (int(cx), map.HEIGHT - 1 - int(cy))
 
-            cv2.line(workspace, pt1, pt2, map.BLUE, 2)
+                cv2.line(workspace, pt1, pt2, map.BLUE, 2)
 
-        out.write(workspace)
+            out.write(workspace)
 
     for _ in range(200):
         out.write(workspace)
 
     out.release()
+
     print("Animation saved as animation.mp4.")

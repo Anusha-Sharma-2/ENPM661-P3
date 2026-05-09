@@ -25,8 +25,7 @@ def generate_map(robot_radius, clearance):
         cv2.rectangle(obs_mask, pt(cx-7.5, cy+7.5), pt(cx+7.5, cy-7.5), 255, -1)
 
     # right slide vertical wall - after 3rd square
-    cv2.rectangle(obs_mask, pt(295, 200), pt(300, 55), 255, -1)
-    
+    cv2.rectangle(obs_mask, pt(290, 200), pt(305, 45), 255, -1)    
     # first llanting line - at box 1 center x
     # x=45 y=200 140 -30
     x1_start, y1_start = 45, 200
