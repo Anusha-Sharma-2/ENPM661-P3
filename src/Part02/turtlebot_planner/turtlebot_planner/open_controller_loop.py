@@ -10,7 +10,7 @@ def yaw_from_quaternion(q):
     cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
     return math.atan2(siny_cosp, cosy_cosp)
 
-
+# helper clamps angle between -pi and pi
 def wrap_angle(angle):
     while angle > math.pi:
         angle -= 2.0 * math.pi
@@ -33,6 +33,7 @@ class TurtleBotController(Node):
             10
         )
 
+        # setting up robot state
         self.x = None
         self.y = None
         self.theta = None
@@ -43,6 +44,7 @@ class TurtleBotController(Node):
         self.start_time = None
         self.timer = self.create_timer(0.05, self.control_loop)
 
+        # Fetch waypoints
         waypoint_file = os.path.expanduser("~/waypoints.txt")
 
         self.get_logger().info(f"Current working directory: {os.getcwd()}")
@@ -84,11 +86,13 @@ class TurtleBotController(Node):
 
         self.timer = self.create_timer(0.05, self.control_loop)
 
+    # updating robot position
     def odom_callback(self, msg):
         self.x = msg.pose.pose.position.x
         self.y = msg.pose.pose.position.y
         self.theta = yaw_from_quaternion(msg.pose.pose.orientation)
 
+    # MAIN CONTROL LOOP
     def control_loop(self):
         if self.x is None or self.y is None or self.theta is None:
             return
@@ -103,16 +107,19 @@ class TurtleBotController(Node):
             self.timer.cancel()
             return
 
+        # Get target waypoints
         target_x, target_y = self.waypoints[self.current_waypoint]
 
         dx = target_x - self.x
         dy = target_y - self.y
 
+        # Get distance/theta error
         distance_error = math.sqrt(dx * dx + dy * dy)
 
         desired_theta = math.atan2(dy, dx)
         theta_error = wrap_angle(desired_theta - self.theta)
 
+        # If smaller than threshold, proceed to next waypoint
         if distance_error < self.waypoint_threshold:
             self.get_logger().info(
                 f"Reached waypoint {self.current_waypoint + 1}/{len(self.waypoints)} "
@@ -123,20 +130,23 @@ class TurtleBotController(Node):
             self.publisher_.publish(Twist())
             return
 
+        # Adjust speed based on errors
         msg = Twist()
 
         # P controller
         linear_speed = self.kp_linear * distance_error
         angular_speed = self.kp_angular * theta_error
 
-        # Clamp speeds
+        # clamp speed optimization
         linear_speed = max(min(linear_speed, self.max_linear_speed), 0.0)
         angular_speed = max(min(angular_speed, self.max_angular_speed), -self.max_angular_speed)
 
         msg.linear.x = linear_speed
         msg.angular.z = angular_speed
 
+        # send command to robot
         self.publisher_.publish(msg)
+        
         end_time = self.get_clock().now().nanoseconds / 1e9
         self.get_logger().info(f"Total run time: {end_time - self.start_time:.2f} seconds")
 

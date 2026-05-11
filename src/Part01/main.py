@@ -24,6 +24,8 @@ if __name__ == '__main__':
             clearance = float(input("Enter Clearance in cm: "))
 
             workspace = map.generate_map(ROBOT_RADIUS, clearance)
+            
+            # DEBUGGING WORK - create map and points
             cv2.imwrite("debug_map.png", workspace)
 
             test_points = [
@@ -89,20 +91,6 @@ if __name__ == '__main__':
 
         print(f"Exported actions to {actions_path}")
 
-        # # Save waypoints for odom-based P controller
-        # waypoints_path = os.path.join(base_dir, "waypoints.txt")
-        # Save waypoints for odom-based P controller
-        
-        # part02_dir = os.path.abspath(os.path.join(base_dir, "..", "Part02/turtlebot_planner/turtlebot_planner"))
-        # if not os.path.exists(part02_dir):
-        #     os.makedirs(part02_dir)            
-        # waypoints_path = os.path.join(part02_dir, "waypoints.txt")
-
-        # base_dir = os.path.dirname(os.path.abspath(__file__))
-        # # This goes up one level to the /root/proj3_ws/ENPM661-P3/ folder
-        # project_root = os.path.abspath(os.path.join(base_dir, ".."))
-        # waypoints_path = os.path.join(project_root, "waypoints.txt")
-
         waypoints_path = os.path.expanduser("~/waypoints.txt")
 
         # Planner map: 400 x 200 cm
@@ -134,7 +122,7 @@ if __name__ == '__main__':
                     # Save planner-space waypoint for debug drawing
                     planner_waypoints.append((x_cm, y_cm))
 
-                    # Convert planner-relative cm motion to Gazebo-relative meters.
+                    # Convert from planner to gazebo
                     x_m = GAZEBO_START_X + ((x_cm - PLANNER_START_X) / 100.0) * GAZEBO_SCALE
                     y_m = GAZEBO_START_Y + ((y_cm - PLANNER_START_Y) / 100.0) * GAZEBO_SCALE
 
@@ -144,7 +132,7 @@ if __name__ == '__main__':
         print(f"Exported waypoints to {waypoints_path}")
         print(f"Generated {len(gazebo_waypoints)} Gazebo waypoints.")
 
-        # Save a debug image showing only the first few waypoints/path segments
+        # MORE DEBUGGING - draw the first few waypoints on the map
         debug_first = map.generate_map(ROBOT_RADIUS, clearance)
 
         # draw start and goal
