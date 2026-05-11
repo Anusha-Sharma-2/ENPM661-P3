@@ -27,30 +27,30 @@ The following libraries are required to run this project:
 * `math` and `heapq` (Standard Python libraries)
 
 You can install the external python dependencies using pip:
-```bash
+```
 pip install opencv-python numpy
-```bash
+```
 
 ## How to run:
-Here are the step-by-step instructions to run your project:
+Here are the step-by-step instructions to run the project:
 
 1. Open your terminal and create a new workspace folder:
-```bash
+```
 mkdir -p ~/proj3_ws/src
 cd ~/proj3_ws/src
-```bash
+```
 2. Clone this repository into src folder:
-```bash
+```
 git clone [Insert Your GitHub Link Here] .
 cd Part01
-```bash
+```
 3. Run the main solver to generate the map and waypoints:
-```bash
+```
 python3 main.py
-```bash
+```
 
     Part 01 sample input:
-    ```bash
+    ```
     Enter start coordinates:
     X coordinate (0-400): 0
     Y coordinate (0-200): 100
@@ -63,20 +63,20 @@ python3 main.py
     Enter RPM 1: 60
     Enter RPM 2: 120
     Enter Clearance in cm: 7    
-    ```bash
+    ```
 
 4. Build the ROS2 packages:
-```bash
+```
 cd ~/proj3_ws
 colcon build --symlink-install
 source install/setup.bash
-```bash
+```
 5. Launch the simulation world:
-```bash
+```
 ros2 launch turtlebot3_project3 competition_world.launch.py
-```bash
+```
 6. Open another terminal tab and run controller node:
-```bash
+```
 source install/setup.bash
 ros2 run turtlebot_planner open_controller_loop
-```bash
+```
