@@ -43,8 +43,7 @@ class TurtleBotController(Node):
         self.start_time = None
         self.timer = self.create_timer(0.05, self.control_loop)
 
-        # Change this only if folder moves
-        waypoint_file = '/root/proj3_ws/src/ENPM661-P3/Project 3/waypoints.txt'
+        waypoint_file = os.path.expanduser("~/waypoints.txt")
 
         self.get_logger().info(f"Current working directory: {os.getcwd()}")
         self.get_logger().info(f"Reading waypoints from: {waypoint_file}")
@@ -71,13 +70,6 @@ class TurtleBotController(Node):
         self.get_logger().info(f"First 5 waypoints: {self.waypoints[:5]}")
         self.get_logger().info(f"First waypoint: {self.waypoints[0]}")
         self.get_logger().info(f"Last waypoint: {self.waypoints[-1]}")
-
-        self.debug_log_path = "/root/proj3_ws/src/ENPM661-P3/Project 3/odom_waypoint_debug.csv"
-        self.debug_log = open(self.debug_log_path, "w")
-        self.debug_log.write("idx,target_x,target_y,odom_x,odom_y,dist_error,theta\n")
-        self.debug_log.flush()
-
-        self.get_logger().info(f"Writing odom/waypoint debug to: {self.debug_log_path}")
 
         # Tune these
         self.kp_linear = 1.2
@@ -136,15 +128,6 @@ class TurtleBotController(Node):
         # P controller
         linear_speed = self.kp_linear * distance_error
         angular_speed = self.kp_angular * theta_error
-
-        # # Slow down during sharp turns
-        # turn_scale = max(0.25, 1.0 - abs(theta_error))
-
-        # linear_speed *= turn_scale
-
-        # If robot is pointed very wrong, turn first instead of driving into wall
-        # if abs(theta_error) > 1.2:
-        #     linear_speed = 0.0
 
         # Clamp speeds
         linear_speed = max(min(linear_speed, self.max_linear_speed), 0.0)

@@ -89,23 +89,33 @@ if __name__ == '__main__':
 
         print(f"Exported actions to {actions_path}")
 
+        # # Save waypoints for odom-based P controller
+        # waypoints_path = os.path.join(base_dir, "waypoints.txt")
         # Save waypoints for odom-based P controller
-        waypoints_path = os.path.join(base_dir, "waypoints.txt")
+        
+        # part02_dir = os.path.abspath(os.path.join(base_dir, "..", "Part02/turtlebot_planner/turtlebot_planner"))
+        # if not os.path.exists(part02_dir):
+        #     os.makedirs(part02_dir)            
+        # waypoints_path = os.path.join(part02_dir, "waypoints.txt")
 
-        # Gazebo arena seems to be 2x larger than the planner map.
+        # base_dir = os.path.dirname(os.path.abspath(__file__))
+        # # This goes up one level to the /root/proj3_ws/ENPM661-P3/ folder
+        # project_root = os.path.abspath(os.path.join(base_dir, ".."))
+        # waypoints_path = os.path.join(project_root, "waypoints.txt")
+
+        waypoints_path = os.path.expanduser("~/waypoints.txt")
+
         # Planner map: 400 x 200 cm
         # Gazebo arena: about 8 x 4 m
         GAZEBO_SCALE = 2.0
 
-        # From /odom, the TurtleBot starts around x=0.50, y=0.0.
-        # This keeps the first planned point lined up with the real robot spawn.
+        # From /odom, turtlebot starts around x=0.5, y=0.0
         GAZEBO_START_X = 0.50
         GAZEBO_START_Y = 0.0
 
         PLANNER_START_X = xs
         PLANNER_START_Y = ys
 
-        # keep planner-space waypoints too so we can draw the exact debug image
         planner_waypoints = []
         gazebo_waypoints = []
 
@@ -115,7 +125,6 @@ if __name__ == '__main__':
                     continue
 
                 # Save dense waypoints along each A* curve.
-                # Change 4 to 2 if you want denser waypoints again.
                 for i, point in enumerate(curve):
                     if i % 12 != 0 and i != len(curve) - 1:
                         continue
@@ -135,7 +144,7 @@ if __name__ == '__main__':
         print(f"Exported waypoints to {waypoints_path}")
         print(f"Generated {len(gazebo_waypoints)} Gazebo waypoints.")
 
-        # Save a debug image showing only the first few waypoints/path segments.
+        # Save a debug image showing only the first few waypoints/path segments
         debug_first = map.generate_map(ROBOT_RADIUS, clearance)
 
         # draw start and goal
@@ -155,14 +164,13 @@ if __name__ == '__main__':
             -1
         )
 
-        # draw the first DEBUG_WAYPOINT_LIMIT planner waypoints
         limited_waypoints = planner_waypoints[:DEBUG_WAYPOINT_LIMIT]
 
         for i, (wx, wy) in enumerate(limited_waypoints):
             px = int(wx)
             py = map.HEIGHT - 1 - int(wy)
 
-            # first waypoint is yellow-ish, rest are blue
+            # first waypoint is yellowish rest are blue
             color = (0, 255, 255) if i == 0 else map.BLUE
             cv2.circle(debug_first, (px, py), 3, color, -1)
 
@@ -172,7 +180,6 @@ if __name__ == '__main__':
                 pt2 = (int(wx), map.HEIGHT - 1 - int(wy))
                 cv2.line(debug_first, pt1, pt2, map.BLUE, 2)
 
-        # mark the final debug waypoint in orange/red
         if len(limited_waypoints) > 0:
             last_x, last_y = limited_waypoints[-1]
             cv2.circle(
@@ -187,7 +194,7 @@ if __name__ == '__main__':
         cv2.imwrite(debug_first_path, debug_first)
         print(f"Saved first {DEBUG_WAYPOINT_LIMIT} waypoint debug image to {debug_first_path}")
 
-        # Also save the first few waypoint numbers to a text file for checking
+        # save the first few waypoint numbers to a text file for debugging
         debug_txt_path = os.path.join(base_dir, f"debug_first_{DEBUG_WAYPOINT_LIMIT}_waypoints.txt")
         with open(debug_txt_path, "w") as f:
             f.write("idx,planner_x_cm,planner_y_cm,gazebo_x_m,gazebo_y_m\n")
